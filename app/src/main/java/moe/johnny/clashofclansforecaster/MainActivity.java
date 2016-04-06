@@ -1,15 +1,11 @@
 package moe.johnny.clashofclansforecaster;
 
-import android.database.Observable;
 import android.graphics.Color;
-import android.graphics.Shader;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -21,7 +17,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
-import android.widget.TextView;
 import android.support.v7.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -38,25 +33,38 @@ import moe.johnny.tools.getBarInfo;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private static final String TAG = "MainActivity";
+
     public PublishSubject<String> get_coc_status_Observable = PublishSubject.create();
     public RecyclerView mRecyclerView;
     public RecyclerView.LayoutManager mLayoutManager;
     public ContentMainAdapter mAdapter;
     public ArrayList<RecyclerViewDataset> mDataset = new ArrayList<>();
+    private Toolbar toolbar;
+    private AppBarLayout mAppBarLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.main_content_recycler_view);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                get_coc_status_Observable.onNext("Next");
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.main_content_recycler_view);
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
+        //mRecyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
         mLayoutManager = new LinearLayoutManager(this);
@@ -66,14 +74,7 @@ public class MainActivity extends AppCompatActivity
         mAdapter = new ContentMainAdapter(mDataset);
         mRecyclerView.setAdapter(mAdapter);
 
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                get_coc_status_Observable.onNext("Next");
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -87,62 +88,10 @@ public class MainActivity extends AppCompatActivity
         /**
          * set up a padding for toolbar
          */
-        final AppBarLayout mAppBarLayout = (AppBarLayout) findViewById(R.id.appbar);
+        mAppBarLayout = (AppBarLayout) findViewById(R.id.appbar);
         mAppBarLayout.setPadding(0, getBarInfo.getStatusBarHeight(this), 0, 0);
 
-
-                get_coc_status_Observable.subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(new Action1<String>() {
-                    @Override
-                    public void call(String s) {
-                        GetStats.GetCOCStats();
-                    }
-                });
-
-        COCJsonFormat.COCJson_Observable.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<JsonStruct>() {
-                    @Override
-                    public void call(JsonStruct mJsonStruct) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                            //getWindow().setStatusBarColor(Color.parseColor(mJsonStruct.bgColor));
-                            getWindow().setNavigationBarColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
-                            toolbar.setBackgroundColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
-                            mAppBarLayout.setBackgroundColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
-                        }
-                        //TextView LootIndex = (TextView)findViewById((R.id.LootIndex));
-                        //TextView PlayerInfo = (TextView)findViewById(R.id.PlayerInfo);
-                        String info = "totalPlayers:" + mJsonStruct.totalPlayers + "\n"
-                                + "playersOnline: " + mJsonStruct.playersOnline + "\n"
-                                + "shieldedPlayers: " + mJsonStruct.shieldedPlayers + "\n"
-                                + "attackablePlayers: " + mJsonStruct.attackablePlayers;
-                        String index = "Loot Index: " + mJsonStruct.LootIndex;
-
-                        RecyclerViewDataset DataIndex = new RecyclerViewDataset();
-                        DataIndex.setText(index);
-                        DataIndex.setBgColor(mJsonStruct.bgColor);
-                        RecyclerViewDataset DataInfo = new RecyclerViewDataset();
-                        DataInfo.setText(info);
-                        DataInfo.setBgColor(mJsonStruct.bgColor);
-                        //if mDataset is null, we should first addd them, otherwise we should keep them update,not add them again.
-                        if(mDataset.size() != 0) {
-                            mDataset.set(0, DataIndex);
-                            mDataset.set(1, DataInfo);
-                            mAdapter.notifyItemChanged(0);
-                            mAdapter.notifyItemChanged(1);
-                            mAdapter.notifyDataSetChanged();
-                        } else {
-                            mDataset.add(DataIndex);
-                            mDataset.add(DataInfo);
-                            mAdapter.notifyItemInserted(mDataset.size());
-                            mAdapter.notifyDataSetChanged();
-                        }
-                    }
-                });
-
-        get_coc_status_Observable.onNext("Start");
+        initSubscribe();
     }
 
     @Override
@@ -200,5 +149,72 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public boolean initSubscribe() {
+        /**
+         * Init Subscribe
+         */
+        get_coc_status_Observable.subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        GetStats.GetCOCStats();
+                    }
+                });
+
+        COCJsonFormat.COCJson_Observable.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<JsonStruct>() {
+                    @Override
+                    public void call(JsonStruct mJsonStruct) {
+                       updateDataset(mJsonStruct);
+                    }
+                });
+
+        /**
+         * When we first init subscribe, we should get coc status,
+         * to make sure we have data show to users.
+         */
+        get_coc_status_Observable.onNext("Init");
+
+        return true;
+    }
+
+    public void updateDataset(JsonStruct mJsonStruct) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            //getWindow().setStatusBarColor(Color.parseColor(mJsonStruct.bgColor));
+            getWindow().setNavigationBarColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
+            toolbar.setBackgroundColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
+            mAppBarLayout.setBackgroundColor(Color.parseColor(mJsonStruct.mainColorShadeNow));
+
+        }
+        String info = "totalPlayers:" + mJsonStruct.totalPlayers + "\n"
+                + "playersOnline: " + mJsonStruct.playersOnline + "\n"
+                + "shieldedPlayers: " + mJsonStruct.shieldedPlayers + "\n"
+                + "attackablePlayers: " + mJsonStruct.attackablePlayers;
+        String index = "Loot Index: " + mJsonStruct.LootIndex;
+
+        RecyclerViewDataset DataIndex = new RecyclerViewDataset();
+        DataIndex.setText(index);
+        DataIndex.setBgColor(mJsonStruct.bgColor);
+        RecyclerViewDataset DataInfo = new RecyclerViewDataset();
+        DataInfo.setText(info);
+        DataInfo.setBgColor(mJsonStruct.bgColor);
+        //if mDataset is null, we should first addd them, otherwise we should keep them update,not add them again.
+        if(mDataset.size() != 0) {
+            mDataset.set(0, DataIndex);
+            mDataset.set(1, DataInfo);
+            mAdapter.notifyItemChanged(0);
+            mAdapter.notifyItemChanged(1);
+            mAdapter.notifyDataSetChanged();
+        } else {
+            mDataset.add(DataIndex);
+            mDataset.add(DataInfo);
+            mAdapter.notifyItemInserted(mDataset.size());
+            mAdapter.notifyDataSetChanged();
+        }
     }
 }
