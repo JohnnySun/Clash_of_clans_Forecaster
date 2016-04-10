@@ -2,7 +2,7 @@ language: android
 jdk: openjdk7
 android:
   components:
-  add .travis.yml
+  - tools
   - build-tools-23.0.3
   - android-23
   - extra-android-support
