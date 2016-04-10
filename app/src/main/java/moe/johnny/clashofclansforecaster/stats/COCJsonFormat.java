@@ -18,6 +18,8 @@ public class COCJsonFormat {
         JsonStruct mJsonStruct = new JsonStruct();
         try {
             JSONObject jsonObject = new JSONObject(jsonString);
+
+            //set json value to JSONObject
             mJsonStruct.setLootIndex(jsonObject.getDouble("lootIndexString"));
             mJsonStruct.setMainColorShadeNow(jsonObject.getString("mainColorShadeNow"));
             mJsonStruct.setBgColor(jsonObject.getString("bgColor"));

@@ -30,6 +30,9 @@ import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 import moe.johnny.tools.getBarInfo;
 
+/**
+ * TODO: Do some clan up and fix nullpointer exception.
+ */
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
